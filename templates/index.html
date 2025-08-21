@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo"><h1>SimpList</h1></div>
+            <a href="#logout"><img class="icon" src="{{ url_for('static', path='icons/logout.png') }}" alt="logout"></a>
+        </header>
+
+        <main>
+            <div class="list-holder">
+                <div class="add-task">
+                    <input id="task-content" type="text" name="task-content" minlength="3" maxlength="100" placeholder="add task">
+                    <button id="add-task-btn">Add</button>
+                </div>
+
+                <div id="list-tasks" class="list-tasks">
+                    
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', path='js/taskOperations.js') }}"></script>
+</body>
+</html>
