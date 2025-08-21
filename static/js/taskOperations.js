@@ -67,5 +67,20 @@ function ws_deleteTaskFromServer(element){
     let taskID = element.parentNode.getAttribute("id");
 
     socketDelete.send(JSON.stringify({ id: taskID }));
-    element.parentNode.remove();
+}
+
+// Wait for confirmation of task deletion
+socketDelete.onmessage = function(event) {
+    let data = JSON.parse(event.data);
+
+    if (data.status === 1){
+        let id = JSON.parse(event.data).id;
+        let taskDiv = document.getElementById(id);
+        if (taskDiv) {
+            taskDiv.remove();
+        }
+    }
+    else if (data.status === 0) {
+        console.error("Error deleting task:", data.message);
+    } 
 }

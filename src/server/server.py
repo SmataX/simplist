@@ -52,8 +52,11 @@ async def ws_delete_task(websocket: WebSocket, task_operations: TaskOperationsDe
     try:
         while True:
             data = await websocket.receive_json()
-            print(data)
-            task_operations.delete(data.get("id"))
+            try:
+                task_operations.delete(data.get("id"))
+                await websocket.send_json({"status": 1, "id": data.get("id")})
+            except Exception as e:
+                await websocket.send_json({"status": 0, "error": str(e)})
     except:
         clinets.remove(websocket)
 
