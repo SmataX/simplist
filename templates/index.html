@@ -21,7 +21,16 @@
                 </div>
 
                 <div id="list-tasks" class="list-tasks">
-                    
+                {% if tasks %}
+                    {% for task in tasks %}
+                        <div class="task" id="{{ task.id }}">
+                            <span>{{ task.content }}</span>
+                            <button><img class="icon" src="{{ url_for('static', path='icons/trash.png') }}"></button>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No tasks available.</p>
+                {% endif %}
                 </div>
             </div>
         </main>

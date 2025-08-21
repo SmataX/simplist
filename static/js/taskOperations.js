@@ -1,14 +1,11 @@
-
-
-socket.on("connect", () => {
-    console.log("Connected to server with id:", socket.id);
-});
-
+const socket = new WebSocket("ws://" + window.location.host + "/ws/add");
 
 const tasksContainer = document.getElementById("list-tasks");
 const addTaskButton = document.getElementById('add-task-btn');
 const taskContentInput = document.getElementById('task-content');
 
+
+// Add event to button for adding a task
 addTaskButton.addEventListener('click', function(){
     if (taskContentInput.value.length < 3) {
         return;
@@ -17,12 +14,15 @@ addTaskButton.addEventListener('click', function(){
     tasksContainer.appendChild(
         createTask(taskContentInput.value)
     );
+    sendTaskToServer(taskContentInput.value)
 
     // Reset input
     taskContentInput.value = '';
 }, false);
 
 
+
+// Add event to input for adding a task on Enter key press
 taskContentInput.addEventListener("keyup", function(event) {
     event.preventDefault();
     if (event.keyCode === 13) {
@@ -50,4 +50,13 @@ function createTask(content) {
     taskDiv.appendChild(button);
 
     return taskDiv;
+}
+
+// Function to send task content to the server
+function sendTaskToServer(taskContent) {
+    const taskData = {
+        content: taskContent
+    };
+
+    socket.send(JSON.stringify(taskData));
 }
