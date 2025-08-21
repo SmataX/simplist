@@ -14,6 +14,10 @@ addTaskButton.addEventListener('click', function(){
     tasksContainer.appendChild(
         createTask(taskContentInput.value)
     );
+
+    // Hide "No tasks available" message if it was displayed
+    document.getElementById("no-tasks-available").style.display = "none";
+
     ws_sendTaskToServer(taskContentInput.value)
 
     // Reset input
@@ -78,6 +82,14 @@ socketDelete.onmessage = function(event) {
         let taskDiv = document.getElementById(id);
         if (taskDiv) {
             taskDiv.remove();
+
+            // If no tasks left, show "No tasks available" message
+            if (tasksContainer.children.length === 0) {
+                const noTasksMessage = document.createElement("p");
+                noTasksMessage.id = "no-tasks-available";
+                noTasksMessage.textContent = "No tasks available.";
+                tasksContainer.appendChild(noTasksMessage);
+            }
         }
     }
     else if (data.status === 0) {
