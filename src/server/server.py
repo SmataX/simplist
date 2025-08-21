@@ -43,6 +43,21 @@ async def ws_add_task(websocket: WebSocket, task_operations: TaskOperationsDep):
             task_operations.add(data)
     except:
         clinets.remove(websocket)
+
+
+@app.websocket("/ws/delete")
+async def ws_delete_task(websocket: WebSocket, task_operations: TaskOperationsDep):
+    await websocket.accept()
+    clinets.append(websocket)
+    try:
+        while True:
+            data = await websocket.receive_json()
+            print(data)
+            task_operations.delete(data.get("id"))
+    except:
+        clinets.remove(websocket)
+
+
     
 
     

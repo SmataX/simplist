@@ -1,9 +1,9 @@
-const socket = new WebSocket("ws://" + window.location.host + "/ws/add");
-
 const tasksContainer = document.getElementById("list-tasks");
 const addTaskButton = document.getElementById('add-task-btn');
 const taskContentInput = document.getElementById('task-content');
 
+const socketAdd = new WebSocket("ws://" + window.location.host + "/ws/add");
+const socketDelete = new WebSocket("ws://" + window.location.host + "/ws/delete");
 
 // Add event to button for adding a task
 addTaskButton.addEventListener('click', function(){
@@ -14,7 +14,7 @@ addTaskButton.addEventListener('click', function(){
     tasksContainer.appendChild(
         createTask(taskContentInput.value)
     );
-    sendTaskToServer(taskContentInput.value)
+    ws_sendTaskToServer(taskContentInput.value)
 
     // Reset input
     taskContentInput.value = '';
@@ -40,6 +40,7 @@ function createTask(content) {
     span.textContent = content;
 
     const button = document.createElement("button");
+    button.onclick = ws_deleteTaskFromServer;
     const img = document.createElement("img");
     img.classList.add("icon");
     img.src = "/static/icons/trash.png";
@@ -53,10 +54,18 @@ function createTask(content) {
 }
 
 // Function to send task content to the server
-function sendTaskToServer(taskContent) {
+function ws_sendTaskToServer(taskContent) {
     const taskData = {
         content: taskContent
     };
 
-    socket.send(JSON.stringify(taskData));
+    socketAdd.send(JSON.stringify(taskData));
+}
+
+// Function to handle task deletion from the server
+function ws_deleteTaskFromServer(element){
+    let taskID = element.parentNode.getAttribute("id");
+
+    socketDelete.send(JSON.stringify({ id: taskID }));
+    element.parentNode.remove();
 }
