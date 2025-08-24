@@ -2,9 +2,7 @@ const tasksContainer = document.getElementById("list-tasks");
 const addTaskButton = document.getElementById('add-task-btn');
 const taskContentInput = document.getElementById('task-content');
 
-const socketAdd = new WebSocket("ws://" + window.location.host + "/ws/add");
-const socketDelete = new WebSocket("ws://" + window.location.host + "/ws/delete");
-const socketUpdate = new WebSocket("ws://" + window.location.host + "/ws/change_status");
+const socket = new WebSocket("ws://" + window.location.host + "/ws");
 
 // Add event to button for adding a task
 addTaskButton.addEventListener('click', function(){
@@ -16,11 +14,13 @@ addTaskButton.addEventListener('click', function(){
         createTask(taskContentInput.value)
     );
 
+    ws_addTask(taskContentInput.value)
+
     // Hide "No tasks available" message if it was displayed
     // if (noTasksMessage)
     //     noTasksMessage.style.display = "none";
 
-    ws_sendTaskToServer(taskContentInput.value)
+    
 
     // Reset input
     taskContentInput.value = '';
@@ -42,7 +42,7 @@ function createTask(content) {
     const taskDiv = document.createElement("div");
     taskDiv.classList.add("task");
     taskDiv.addEventListener("click", function() {
-        ws_updateTaskStatusOnServer(this);
+        ws_updateTask(this);
     });
 
     const span = document.createElement("span");
@@ -50,7 +50,7 @@ function createTask(content) {
 
     const button = document.createElement("button");
     button.addEventListener("click", function() {
-        ws_deleteTaskFromServer(this);
+        ws_deleteTask(this);
     });
     const img = document.createElement("img");
     img.classList.add("icon");
@@ -65,81 +65,87 @@ function createTask(content) {
 }
 
 // Function to send task content to the server
-function ws_sendTaskToServer(taskContent) {
-    const taskData = {
-        content: taskContent
+function ws_addTask(taskContent) {
+    const data = {
+        action: "add",
+        content: taskContent,
     };
 
-    socketAdd.send(JSON.stringify(taskData));
-}
-
-// Wait for confirmation of task addition
-socketAdd.onmessage = function(event) {
-    let data = JSON.parse(event.data);
-
-    if (data.status === 1) {
-        // Assign the received ID to the last added task
-        let id = JSON.parse(event.data).id;
-        tasksContainer.lastChild.setAttribute("id", id);
-    } 
-    else if (data.status === 0) {
-        console.error("Error while adding task:", data.message);
-    }
+    console.log(JSON.stringify(data));
+    socket.send(JSON.stringify(data));
 }
 
 // Function to handle task deletion from the server
-function ws_deleteTaskFromServer(element){
-    let taskID = element.parentNode.getAttribute("id");
+function ws_deleteTask(element){
+    const data = {
+        action: "delete",
+        id: element.parentNode.getAttribute("id"),
+    };
 
-    socketDelete.send(JSON.stringify({ id: taskID }));
-}
-
-// Wait for confirmation of task deletion
-socketDelete.onmessage = function(event) {
-    let data = JSON.parse(event.data);
-
-    if (data.status === 1){
-        let id = JSON.parse(event.data).id;
-        let taskDiv = document.getElementById(id);
-        if (taskDiv) {
-            taskDiv.remove();
-
-            // If no tasks left, show "No tasks available" message
-            if (tasksContainer.children.length === 0) {
-                const noTasksMessage = document.createElement("p");
-                noTasksMessage.id = "no-tasks-available";
-                noTasksMessage.textContent = "No tasks available.";
-                tasksContainer.appendChild(noTasksMessage);
-            }
-        }
-    }
-    else if (data.status === 0) {
-        console.error("Error deleting task:", data.error);
-    } 
+    socket.send(JSON.stringify(data));
 }
 
 // Function to handle task status update on the server
-function ws_updateTaskStatusOnServer(element, newStatus) {
-    let taskID = element.getAttribute("id");
+function ws_updateTask(element) {
+    const data = {
+        action: "update",
+        id: element.getAttribute("id"),
+    };
 
-    socketUpdate.send(JSON.stringify({ id: taskID }));
+    socket.send(JSON.stringify(data));
 }
 
-// Wait for confirmation of task status update
-socketUpdate.onmessage = function(event) {
-    let data = JSON.parse(event.data);
+// Websocket message handler
+socket.onmessage = function(event) {
+    const parsedData = JSON.parse(event.data);
 
-    if (data.status === 1){
-        let id = JSON.parse(event.data).id;
-        let taskDiv = document.getElementById(id);
-        if (taskDiv) {
-            if (taskDiv.className === "task")
-                taskDiv.className += " task-completed";
-            else
-                taskDiv.className = "task";
+    if (!parsedData.status === 0) {
+        console.error("Error from server:", parsedData.error);
+        return;
+    }
+
+    switch (parsedData.action) {
+        case "add":
+            handleAddTask(parsedData);
+            break;
+        case "delete":
+            handleDeleteTask(parsedData);
+            break;
+        case "update":
+            handleUpdateTask(parsedData);
+            break;
+        case "error":
+            break;
+        default:
+            console.error("Unknown action:", parsedData.action);
+    }
+}
+
+function handleAddTask(data) {
+    tasksContainer.lastChild.setAttribute("id", data.id);
+}
+
+function handleDeleteTask(data) {
+    let taskDiv = document.getElementById(data.id);
+    if (taskDiv) {
+        taskDiv.remove();
+
+        // If no tasks left, show "No tasks available" message
+        if (tasksContainer.children.length === 0) {
+            const noTasksMessage = document.createElement("p");
+            noTasksMessage.id = "no-tasks-available";
+            noTasksMessage.textContent = "No tasks available.";
+            tasksContainer.appendChild(noTasksMessage);
         }
     }
-    else if (data.status === 0) {
-        console.error("Error updating task status:", data.error);
-    } 
+}
+
+function handleUpdateTask(data) {
+    let taskDiv = document.getElementById(data.id);
+    if (taskDiv) {
+        if (taskDiv.className === "task")
+            taskDiv.className += " task-completed";
+        else
+            taskDiv.className = "task";
+    }
 }

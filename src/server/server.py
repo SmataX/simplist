@@ -29,52 +29,28 @@ async def root(request: Request, task_operations: TaskOperationsDep):
         request=request, name="index.html", context={"tasks":tasks}
     )
 
-
-@app.websocket("/ws/add")
-async def ws_add_task(websocket: WebSocket, task_operations: TaskOperationsDep):
-    await websocket.accept()
-    try:
-        while True:
-            data = await websocket.receive_json()
-            try:
-                task: Task = task_operations.add(data)
-                await websocket.send_json({"status": 1, "id": task.id})
-            except Exception as e:
-                await websocket.send_json({"status": 0, "error": str(e)})
-    except:
-        print("Client disconnected")
-
-
-@app.websocket("/ws/delete")
-async def ws_delete_task(websocket: WebSocket, task_operations: TaskOperationsDep):
-    await websocket.accept()
-    try:
-        while True:
-            data = await websocket.receive_json()
-            try:
-                task_operations.delete(data.get("id"))
-                await websocket.send_json({"status": 1, "id": data.get("id")})
-            except Exception as e:
-                await websocket.send_json({"status": 0, "error": str(e)})
-    except:
-        print("Client disconnected")
-
-
-@app.websocket("/ws/change_status")
-async def ws_change_status(websocket: WebSocket, task_operations: TaskOperationsDep):
-    await websocket.accept()
-    try:
-        while True:
-            data = await websocket.receive_json()
-            try:
-                task_operations.change_status(data.get("id"))
-                await websocket.send_json({"status": 1, "id": data.get("id")})
-            except Exception as e:
-                await websocket.send_json({"status": 0, "error": str(e)})
-    except:
-        print("Client disconnected")
-
-
     
-
+@app.websocket("/ws")
+async def ws_task_actions(websocket: WebSocket, task_operations: TaskOperationsDep):
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_json()
+            action = data.get("action")
+            try:
+                if action == "add":
+                    task: Task = task_operations.add({"content": data.get("content")})
+                    await websocket.send_json({"status": 1, "action": "add", "id": task.id})
+                elif action == "delete":
+                    task_operations.delete(data.get("id"))
+                    await websocket.send_json({"status": 1, "action": "delete", "id": data.get("id")})
+                elif action == "update":
+                    task_operations.change_status(data.get("id"))
+                    await websocket.send_json({"status": 1, "action": "update", "id": data.get("id")})
+                else:
+                    await websocket.send_json({"status": 0, "error": f"Unknown action: {action}"})
+            except Exception as e:
+                await websocket.send_json({"status": 0, "action": "error", "error": str(e)})
+    except:
+        print("Client disconnected")
     

@@ -24,12 +24,12 @@
                 {% if tasks %}
                     {% for task in tasks %}
                     {% if task.completed == 0 %}
-                        <div onclick="ws_updateTaskStatusOnServer(this)" class="task" id="{{ task.id }}">
+                        <div onclick="ws_updateTask(this)" class="task" id="{{ task.id }}">
                     {% else %}
-                        <div onclick="ws_updateTaskStatusOnServer(this)" class="task task-completed" id="{{ task.id }}">
+                        <div onclick="ws_updateTask(this)" class="task task-completed" id="{{ task.id }}">
                     {% endif %}
                             <span>{{ task.content }}</span>
-                            <button onclick="ws_deleteTaskFromServer(this)"><img class="icon" src="{{ url_for('static', path='icons/trash.png') }}"></button>
+                            <button onclick="ws_deleteTask(this)"><img class="icon" src="{{ url_for('static', path='icons/trash.png') }}"></button>
                         </div>
                     {% endfor %}
                 {% else %}
