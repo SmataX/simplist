@@ -40,7 +40,11 @@ async def ws_add_task(websocket: WebSocket, task_operations: TaskOperationsDep):
     try:
         while True:
             data = await websocket.receive_json()
-            task_operations.add(data)
+            try:
+                task: Task = task_operations.add(data)
+                await websocket.send_json({"status": 1, "id": task.id})
+            except Exception as e:
+                await websocket.send_json({"status": 0, "error": str(e)})
     except:
         clinets.remove(websocket)
 

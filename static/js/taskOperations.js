@@ -16,7 +16,8 @@ addTaskButton.addEventListener('click', function(){
     );
 
     // Hide "No tasks available" message if it was displayed
-    document.getElementById("no-tasks-available").style.display = "none";
+    // if (noTasksMessage)
+    //     noTasksMessage.style.display = "none";
 
     ws_sendTaskToServer(taskContentInput.value)
 
@@ -44,7 +45,9 @@ function createTask(content) {
     span.textContent = content;
 
     const button = document.createElement("button");
-    button.onclick = ws_deleteTaskFromServer;
+    button.addEventListener("click", function() {
+        ws_deleteTaskFromServer(this);
+    });
     const img = document.createElement("img");
     img.classList.add("icon");
     img.src = "/static/icons/trash.png";
@@ -64,6 +67,20 @@ function ws_sendTaskToServer(taskContent) {
     };
 
     socketAdd.send(JSON.stringify(taskData));
+}
+
+// Wait for confirmation of task addition
+socketAdd.onmessage = function(event) {
+    let data = JSON.parse(event.data);
+
+    if (data.status === 1) {
+        // Assign the received ID to the last added task
+        let id = JSON.parse(event.data).id;
+        tasksContainer.lastChild.setAttribute("id", id);
+    } 
+    else if (data.status === 0) {
+        console.error("Error while adding task:", data.message);
+    }
 }
 
 // Function to handle task deletion from the server

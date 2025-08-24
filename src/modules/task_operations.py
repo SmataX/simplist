@@ -21,9 +21,10 @@ class TaskOperations:
         return self.db_storage.get_all(Task)
     
     # Add a new task
-    def add(self, task_data: dict):
+    def add(self, task_data: dict) -> Task:
         task = Task(**task_data)
         self.db_storage.create(task)
+        return task
     
     # Delete a task by ID
     def delete(self, id: int):
