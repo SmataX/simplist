@@ -23,7 +23,11 @@
                 <div id="list-tasks" class="list-tasks">
                 {% if tasks %}
                     {% for task in tasks %}
-                        <div class="task" id="{{ task.id }}">
+                    {% if task.completed == 0 %}
+                        <div onclick="ws_updateTaskStatusOnServer(this)" class="task" id="{{ task.id }}">
+                    {% else %}
+                        <div onclick="ws_updateTaskStatusOnServer(this)" class="task task-completed" id="{{ task.id }}">
+                    {% endif %}
                             <span>{{ task.content }}</span>
                             <button onclick="ws_deleteTaskFromServer(this)"><img class="icon" src="{{ url_for('static', path='icons/trash.png') }}"></button>
                         </div>

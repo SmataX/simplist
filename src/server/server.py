@@ -21,9 +21,6 @@ app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-
-clinets = []
-
 @app.get("/")
 async def root(request: Request, task_operations: TaskOperationsDep):
     tasks = task_operations.get_all()
@@ -36,7 +33,6 @@ async def root(request: Request, task_operations: TaskOperationsDep):
 @app.websocket("/ws/add")
 async def ws_add_task(websocket: WebSocket, task_operations: TaskOperationsDep):
     await websocket.accept()
-    clinets.append(websocket)
     try:
         while True:
             data = await websocket.receive_json()
@@ -46,13 +42,12 @@ async def ws_add_task(websocket: WebSocket, task_operations: TaskOperationsDep):
             except Exception as e:
                 await websocket.send_json({"status": 0, "error": str(e)})
     except:
-        clinets.remove(websocket)
+        print("Client disconnected")
 
 
 @app.websocket("/ws/delete")
 async def ws_delete_task(websocket: WebSocket, task_operations: TaskOperationsDep):
     await websocket.accept()
-    clinets.append(websocket)
     try:
         while True:
             data = await websocket.receive_json()
@@ -62,7 +57,22 @@ async def ws_delete_task(websocket: WebSocket, task_operations: TaskOperationsDe
             except Exception as e:
                 await websocket.send_json({"status": 0, "error": str(e)})
     except:
-        clinets.remove(websocket)
+        print("Client disconnected")
+
+
+@app.websocket("/ws/change_status")
+async def ws_change_status(websocket: WebSocket, task_operations: TaskOperationsDep):
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_json()
+            try:
+                task_operations.change_status(data.get("id"))
+                await websocket.send_json({"status": 1, "id": data.get("id")})
+            except Exception as e:
+                await websocket.send_json({"status": 0, "error": str(e)})
+    except:
+        print("Client disconnected")
 
 
     

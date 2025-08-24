@@ -4,6 +4,7 @@ const taskContentInput = document.getElementById('task-content');
 
 const socketAdd = new WebSocket("ws://" + window.location.host + "/ws/add");
 const socketDelete = new WebSocket("ws://" + window.location.host + "/ws/delete");
+const socketUpdate = new WebSocket("ws://" + window.location.host + "/ws/change_status");
 
 // Add event to button for adding a task
 addTaskButton.addEventListener('click', function(){
@@ -40,6 +41,9 @@ taskContentInput.addEventListener("keyup", function(event) {
 function createTask(content) {
     const taskDiv = document.createElement("div");
     taskDiv.classList.add("task");
+    taskDiv.addEventListener("click", function() {
+        ws_updateTaskStatusOnServer(this);
+    });
 
     const span = document.createElement("span");
     span.textContent = content;
@@ -110,6 +114,32 @@ socketDelete.onmessage = function(event) {
         }
     }
     else if (data.status === 0) {
-        console.error("Error deleting task:", data.message);
+        console.error("Error deleting task:", data.error);
+    } 
+}
+
+// Function to handle task status update on the server
+function ws_updateTaskStatusOnServer(element, newStatus) {
+    let taskID = element.getAttribute("id");
+
+    socketUpdate.send(JSON.stringify({ id: taskID }));
+}
+
+// Wait for confirmation of task status update
+socketUpdate.onmessage = function(event) {
+    let data = JSON.parse(event.data);
+
+    if (data.status === 1){
+        let id = JSON.parse(event.data).id;
+        let taskDiv = document.getElementById(id);
+        if (taskDiv) {
+            if (taskDiv.className === "task")
+                taskDiv.className += " task-completed";
+            else
+                taskDiv.className = "task";
+        }
+    }
+    else if (data.status === 0) {
+        console.error("Error updating task status:", data.error);
     } 
 }
