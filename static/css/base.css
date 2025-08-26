@@ -1,0 +1,29 @@
+@font-face {
+    font-family: Oswald;
+    src: url(../fonts/Oswald-VariableFont_wght.ttf);
+}
+
+@font-face {
+    font-family: Lato;
+    src: url(../fonts/Lato-Regular.ttf);
+}
+
+* {margin: 0; padding: 0; box-sizing: border-box;}
+
+body {
+    font-size: 24px;
+    font-family: "Lato", sans-serif;
+    background-color: #f5f5f5;
+}
+
+.container {
+    width: 800px;
+    max-width: 95%;
+    margin: 50px auto;
+    /* padding: 20px 0; */
+    border-radius: 15px;
+
+    -webkit-box-shadow: 8px 8px 12px -12px rgba(66, 68, 90, 1);
+    -moz-box-shadow: 8px 8px 12px -12px rgba(66, 68, 90, 1);
+    box-shadow: 8px 8px 12px -12px rgba(66, 68, 90, 1);
+}

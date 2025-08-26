@@ -8,6 +8,7 @@ from fastapi.responses import RedirectResponse
 from src.common.db_storage import get_session, create_db_and_tables
 from src.common.models import Task
 from src.modules.task_operations import TaskOperationsDep
+from src.server.routers import auth
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -16,6 +17,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.include_router(auth.router)
 
 # BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname((os.path.abspath(__file__)))))
 app.mount("/static", StaticFiles(directory="static"), name="static")
