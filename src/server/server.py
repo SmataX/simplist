@@ -1,5 +1,6 @@
 import os
 from contextlib import asynccontextmanager
+from starlette.middleware.sessions import SessionMiddleware
 from fastapi import FastAPI, Request, Depends, WebSocket
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -18,6 +19,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(auth.router)
+app.add_middleware(SessionMiddleware, secret_key="super-secret-key")
 
 # BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname((os.path.abspath(__file__)))))
 app.mount("/static", StaticFiles(directory="static"), name="static")
