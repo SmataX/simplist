@@ -32,8 +32,9 @@
                             <button onclick="ws_deleteTask(this)"><img class="icon" src="{{ url_for('static', path='icons/trash.png') }}"></button>
                         </div>
                     {% endfor %}
+                    <span style="display: none;" id="no-tasks-msg">No tasks available.</span>
                 {% else %}
-                    <p id="no-tasks-available">No tasks available.</p>
+                    <span style="display: block;" id="no-tasks-msg">No tasks available.</span>
                 {% endif %}
                 </div>
             </div>

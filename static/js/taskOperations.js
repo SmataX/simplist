@@ -1,6 +1,7 @@
 const tasksContainer = document.getElementById("list-tasks");
 const addTaskButton = document.getElementById('add-task-btn');
 const taskContentInput = document.getElementById('task-content');
+const noTasksMessage = document.getElementById("no-tasks-msg");
 
 const socket = new WebSocket("ws://" + window.location.host + "/ws");
 
@@ -9,17 +10,8 @@ addTaskButton.addEventListener('click', function(){
     if (taskContentInput.value.length < 3) {
         return;
     }
-
-    tasksContainer.appendChild(
-        createTask(taskContentInput.value)
-    );
-
     ws_addTask(taskContentInput.value)
-
-    // Reset input
-    taskContentInput.value = '';
 }, false);
-console.log("test ", addTaskButton.getAttribute("userid"));
 
 
 // Add event to input for adding a task on Enter key press
@@ -115,7 +107,16 @@ socket.onmessage = function(event) {
 }
 
 function handleAddTask(data) {
+    tasksContainer.appendChild(
+        createTask(taskContentInput.value)
+    );
     tasksContainer.lastChild.setAttribute("id", data.id);
+
+    // Reset input
+    taskContentInput.value = '';
+
+    // Hide "No tasks available" message
+    noTasksMessage.style.display = "none";
 }
 
 function handleDeleteTask(data) {
@@ -124,11 +125,8 @@ function handleDeleteTask(data) {
         taskDiv.remove();
 
         // If no tasks left, show "No tasks available" message
-        if (tasksContainer.children.length === 0) {
-            const noTasksMessage = document.createElement("p");
-            noTasksMessage.id = "no-tasks-available";
-            noTasksMessage.textContent = "No tasks available.";
-            tasksContainer.appendChild(noTasksMessage);
+        if (tasksContainer.querySelectorAll(".task").length === 0) {
+            noTasksMessage.style.display = "block";
         }
     }
 }
