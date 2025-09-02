@@ -1,47 +1,45 @@
+# src/modules/task_operations.py
+
 from dataclasses import dataclass
 from typing import Annotated
 from fastapi import Depends
 
-from src.common.db_storage import DBStorageHandler, DBStorageHandlerDep
+from src.common.db_storage import DBStorageHandler, StorageDep
 from src.common.models import Task
 
 @dataclass
 class TaskOperations:
-    db_storage: DBStorageHandler
+    db_storage: DBStorageHandler[Task]
 
-    # Get task by ID
     def get(self, id: int) -> Task:
-        try:
-            return self.db_storage.get_by_id(id, Task)
-        except ValueError:
-            raise ValueError(f"Task with id {id} not found!")
+        """"Get a task by ID"""
+        return self.db_storage.get_by_id(id, Task)
     
-    # Get all tasks
-    def get_all(self) -> list[Task]:
-        return self.db_storage.get_all(Task)
+
+    def get_user_tasks(self, user_id: int) -> list[Task]:
+        """Get all tasks for a specific user"""
+        return self.db_storage.get_all_where(Task, Task.user_id == user_id)
+
     
-    # Add a new task
     def add(self, task_data: dict) -> Task:
+        """Create a new task"""
         task = Task(**task_data)
-        self.db_storage.create(task)
-        return task
+        return self.db_storage.create(task)
     
-    # Delete a task by ID
-    def delete(self, id: int):
-        try:
-            self.db_storage.delete(id, Task)
-        except ValueError:
-            raise ValueError(f"Task with id {id} not found!")
     
-    # Change the status of a task by ID
+    def delete(self, id: int) -> None:
+        """Delete a task by ID"""
+        self.db_storage.delete(id, Task)
+        
+    
     def change_status(self, id: int):
+        """Toggle the completion status of a task"""
         task = self.get(id)
-        task.completed = not task.completed
-        self.db_storage.update(id, task)
+        return self.db_storage.update(id, Task, {"completed": not task.completed})
 
 
-# Dependency to provide TaskOperations instance
-def get_task_operations(db_storage: DBStorageHandlerDep) -> TaskOperations:
+def get_task_operations(db_storage: StorageDep) -> TaskOperations:
+    """Dependency to get TaskOperations instance"""
     return TaskOperations(db_storage)
 
 TaskOperationsDep = Annotated[TaskOperations, Depends(get_task_operations)]

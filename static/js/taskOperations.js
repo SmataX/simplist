@@ -16,16 +16,10 @@ addTaskButton.addEventListener('click', function(){
 
     ws_addTask(taskContentInput.value)
 
-    // Hide "No tasks available" message if it was displayed
-    // if (noTasksMessage)
-    //     noTasksMessage.style.display = "none";
-
-    
-
     // Reset input
     taskContentInput.value = '';
 }, false);
-
+console.log("test ", addTaskButton.getAttribute("userid"));
 
 
 // Add event to input for adding a task on Enter key press
@@ -71,7 +65,6 @@ function ws_addTask(taskContent) {
         content: taskContent,
     };
 
-    console.log(JSON.stringify(data));
     socket.send(JSON.stringify(data));
 }
 

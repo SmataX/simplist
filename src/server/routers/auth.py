@@ -1,3 +1,5 @@
+# src/server/routers/auth.py
+
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -9,14 +11,14 @@ from src.modules.auth_operations import login_user, register_user, get_current_u
 from typing import Annotated
 
 templates = Jinja2Templates(directory="templates")
-router = APIRouter(prefix="/auth")
+router = APIRouter()
 
 DBSession = Annotated[Session, Depends(get_session)]
 
 @router.get("/login")
 async def login_get(request: Request, db_session=Depends(get_session)):
     if get_current_user(request, db_session):
-        return RedirectResponse(url="/", status_code=302)
+        return RedirectResponse(url="/tasks", status_code=302)
     return templates.TemplateResponse("login.html", {"request": request})
 
 @router.post("/login")
@@ -28,7 +30,7 @@ async def login_post(request: Request, db_session: DBSession, form: LoginForm):
 
     request.session.clear()
     request.session["user_id"] = user.id
-    return RedirectResponse(url="/", status_code=302)
+    return RedirectResponse(url="/tasks", status_code=302)
 
 
 
@@ -41,11 +43,11 @@ async def register_get(request: Request, db_session=Depends(get_session)):
 @router.post("/register")
 async def register_post(request: Request, db_session: DBSession, form: RegisterForm):
     register_user(request, db_session, form.username, form.email, form.password)
-    return RedirectResponse(url="/auth/login", status_code=302)
+    return RedirectResponse(url="/login", status_code=302)
 
 
 
 @router.get("/logout")
 async def logout(request: Request):
     request.session.clear()
-    return RedirectResponse(url="/auth/login", status_code=302)
+    return RedirectResponse(url="/login", status_code=302)

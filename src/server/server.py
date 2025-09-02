@@ -6,9 +6,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 
-from src.common.db_storage import get_session, create_db_and_tables
-from src.common.models import Task
+from src.common.db_storage import create_db_and_tables
+from src.common.models import Task, User
 from src.modules.task_operations import TaskOperationsDep
+from src.modules.auth_operations import get_current_user, hash_password
 from src.server.routers import auth
 
 @asynccontextmanager
@@ -26,11 +27,19 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 @app.get("/")
-async def root(request: Request, task_operations: TaskOperationsDep):
-    tasks = task_operations.get_all()
+async def root(request: Request, user: User=Depends(get_current_user)):
+    if user:
+        return RedirectResponse(url="/tasks", status_code=302)
+    return RedirectResponse(url="/login", status_code=302)
+
+@app.get("/tasks")
+async def tasks(request: Request, task_operations: TaskOperationsDep, user: User=Depends(get_current_user)):
+    if not user:
+        return RedirectResponse(url="/login", status_code=302)
+    tasks = task_operations.get_user_tasks(user.id)
 
     return templates.TemplateResponse(
-        request=request, name="index.html", context={"tasks":tasks}
+        request=request, name="index.html", context={"tasks":tasks, "user": user}
     )
 
     
@@ -43,7 +52,7 @@ async def ws_task_actions(websocket: WebSocket, task_operations: TaskOperationsD
             action = data.get("action")
             try:
                 if action == "add":
-                    task: Task = task_operations.add({"content": data.get("content")})
+                    task: Task = task_operations.add({"content": data.get("content"), "user_id": websocket.session.get("user_id")})
                     await websocket.send_json({"status": 1, "action": "add", "id": task.id})
                 elif action == "delete":
                     task_operations.delete(data.get("id"))

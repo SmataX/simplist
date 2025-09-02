@@ -1,20 +1,26 @@
+# src/common/db_storage.py
+
 import os
-from typing import Annotated
+from typing import Annotated, TypeVar, Generic
+from collections.abc import Generator
 
 from fastapi import Depends
 from sqlmodel import Session, SQLModel, create_engine, select
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql import ColumnElement
 
-# if os.getenv("ENVIRONMENT") == "development":
-#     DATABASE_URL = "sqlite:///./database.db"
-# else:
-#     DATABASE_URL = os.getenv("DATABASE_URL")
+# Database setup
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./database.db")
+engine = create_engine(DATABASE_URL, echo=True)
 
-DATABASE_URL = "sqlite:///./database.db"
-engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(bind=engine, class_=Session, expire_on_commit=False)
 
-def get_session():
-    with Session(engine) as session:
+def get_session() -> Generator[Session, None, None]:
+    session = SessionLocal()
+    try:
         yield session
+    finally:
+        session.close()
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
@@ -22,54 +28,52 @@ def create_db_and_tables():
 SessionDep = Annotated[Session, Depends(get_session)]
 
 
-class DBStorageHandler:
+T = TypeVar("T", bound=SQLModel)
+
+class DBStorageHandler(Generic[T]):
     def __init__(self, session: Session):
         self.session = session
 
-    def get_all(self, model_type: type[SQLModel]) -> list[SQLModel]:
-        result = self.session.exec(select(model_type)).all()
-        return list(result)
+    def get_all(self, model_type: type[T]) -> list[T]:
+        return list(self.session.exec(select(model_type)).all())
     
-    def get_by_id(self, id: int, model_type: type[SQLModel]) -> SQLModel:
+    def get_by_id(self, id: int, model_type: type[T]) -> T:
         db_model = self.session.get(model_type, id)
         if not db_model:
-            return None
+            raise ValueError(f"{model_type.__name__} with id {id} not found")
         return db_model
     
-    def get_all_where(self, model_type: type[SQLModel], conditions) -> list[SQLModel]:
-        result = self.session.exec(select(model_type).where(*conditions)).all()
-        return list(result)
+    def get_all_where(self, model_type: type[T], *conditions: ColumnElement) -> list[T]:
+        stmt = select(model_type).where(*conditions)
+        return list(self.session.exec(stmt).all())
 
-    def create(self, model: SQLModel) -> SQLModel:
+    def create(self, model: T) -> T:
         self.session.add(model)
         self.session.commit()
         self.session.refresh(model)
         return model
 
-    def update(self, id: int, model: SQLModel) -> SQLModel:
-        db_model = self.session.get(type(model), id)
-
+    def update(self, id: int, model_type: type[T], updates: dict) -> T:
+        db_model = self.session.get(model_type, id)
         if not db_model:
-            return None
+            raise ValueError(f"{model_type.__name__} with id {id} not found")
 
-        model_data = model.model_dump(exclude_unset=True)
-        db_model.sqlmodel_update(model_data)
+        for key, value in updates.items():
+            setattr(db_model, key, value)
+
         self.session.add(db_model)
         self.session.commit()
         self.session.refresh(db_model)
         return db_model
 
-    def delete(self, id: int, model_type: type[SQLModel]) -> None:
+    def delete(self, id: int, model_type: type[T]) -> None:
         db_model = self.get_by_id(id, model_type)
-
-        if not db_model:
-            raise ValueError(f"Model with id {id} not found")
-
         self.session.delete(db_model)
         self.session.commit()
 
-def get_db_storage_handler(session: SessionDep) -> DBStorageHandler:
+
+# Dependency
+def get_storage(session: SessionDep) -> DBStorageHandler:
     return DBStorageHandler(session)
 
-
-DBStorageHandlerDep = Annotated[DBStorageHandler, Depends(get_db_storage_handler)]
+StorageDep = Annotated[DBStorageHandler, Depends(get_storage)]
